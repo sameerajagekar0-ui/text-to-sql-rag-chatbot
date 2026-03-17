@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+langchain
+langchain-community
+sqlalchemy
+pymysql
+psycopg2
+chromadb
+faiss-cpu
+tiktoken
+python-dotenv
+google-generativeai
+langchain-google-genai

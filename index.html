@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text-to-SQL RAG Platform</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================
+   GLOBAL
+========================================================= */
+* {
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    margin: 0;
+    background: linear-gradient(135deg,#0f172a,#020617);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* =========================================================
+   APP CONTAINER
+========================================================= */
+.app {
+    width: 96%;
+    max-width: 1500px;
+    height: 92vh;
+    background: #020617;
+    border-radius: 16px;
+    display: flex;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,.8);
+}
+
+/* =========================================================
+   SIDEBAR – DATABASE
+========================================================= */
+.sidebar {
+    width: 20%;
+    padding: 18px;
+    border-right: 1px solid #1e293b;
+}
+
+.sidebar h2 {
+    color: #38bdf8;
+    margin-bottom: 14px;
+}
+
+.sidebar input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: none;
+    background: #1e293b;
+    color: #fff;
+}
+
+.sidebar button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(90deg,#2563eb,#38bdf8);
+    color: white;
+    font-weight: 600;
+}
+
+.status {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* =========================================================
+   CHAT PANEL
+========================================================= */
+.chat {
+    width: 45%;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    padding: 14px;
+    text-align: center;
+    background: linear-gradient(90deg,#2563eb,#38bdf8);
+    color: white;
+    font-weight: 600;
+}
+
+.chat-body {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.message {
+    margin-bottom: 14px;
+}
+
+.user {
+    background: #2563eb;
+    color: white;
+    padding: 12px;
+    border-radius: 12px 12px 2px 12px;
+    max-width: 75%;
+    margin-left: auto;
+}
+
+.bot {
+    background: #1e293b;
+    color: #e5e7eb;
+    padding: 12px;
+    border-radius: 12px 12px 12px 2px;
+    max-width: 85%;
+    white-space: pre-wrap;
+}
+
+/* =========================================================
+   FOOTER INPUT
+========================================================= */
+.footer {
+    display: flex;
+    padding: 12px;
+    border-top: 1px solid #1e293b;
+}
+
+.footer input {
+    flex: 1;
+    padding: 12px;
+    border-radius: 50px;
+    border: none;
+    outline: none;
+}
+
+.footer button {
+    margin-left: 8px;
+    padding: 10px 16px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(90deg,#2563eb,#38bdf8);
+    color: white;
+}
+
+/* =========================================================
+   SQL PANEL
+========================================================= */
+.sql-panel {
+    width: 35%;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #1e293b;
+}
+
+/* ---------- SQL HEADER ---------- */
+.sql-header {
+    padding: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #22c55e;
+    font-weight: 600;
+    border-bottom: 1px solid #1e293b;
+}
+
+/* ---------- SQL BODY ---------- */
+.sql-body {
+    padding: 14px;
+    overflow-y: auto;
+}
+
+.sql-body pre {
+    background: #020617;
+    color: #22c55e;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid #1e293b;
+    min-height: 120px;
+}
+
+/* ---------- SQL ACTIONS ---------- */
+.sql-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.sql-actions button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.execute-btn {
+    background: linear-gradient(90deg,#16a34a,#22c55e);
+    color: white;
+}
+
+.copy-btn {
+    background: #2563eb;
+    color: white;
+}
+
+/* =========================================================
+   RESULT TABLE
+========================================================= */
+.result-panel {
+    margin-top: 16px;
+}
+
+.result-panel h3 {
+    color: #38bdf8;
+    margin-bottom: 8px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    max-height: 260px;
+    border-radius: 10px;
+    border: 1px solid #1e293b;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #020617;
+}
+
+th, td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #1e293b;
+    font-size: 13px;
+}
+
+th {
+    background: #1e293b;
+    color: #38bdf8;
+    position: sticky;
+    top: 0;
+}
+
+td {
+    color: #e5e7eb;
+}
+
+/* =========================================================
+   TYPING CURSOR
+========================================================= */
+.cursor {
+    display: inline-block;
+    width: 6px;
+    background: #e5e7eb;
+    margin-left: 2px;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0% { opacity: 1 }
+    50% { opacity: 0 }
+    100% { opacity: 1 }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- =======================================================
+     SIDEBAR
+======================================================= -->
+<div class="sidebar">
+    <h2>🗄️ Database</h2>
+    <input id="db_host" value="localhost">
+    <input id="db_user" placeholder="User">
+    <input id="db_password" type="password" placeholder="Password">
+    <input id="db_name" placeholder="Database">
+    <button onclick="connectDB()">Connect</button>
+    <div id="db_status" class="status"></div>
+</div>
+
+<!-- =======================================================
+     CHAT
+======================================================= -->
+<div class="chat">
+    <div class="header">🤖 Text-to-SQL RAG ChatBot</div>
+    <div class="chat-body" id="chat">
+        <div class="message bot">Connect database to start querying.</div>
+    </div>
+    <div class="footer">
+        <input id="question" disabled placeholder="Ask a database question..." onkeydown="handleEnter(event)">
+        <button id="sendBtn" disabled onclick="askQuestion()">➤</button>
+    </div>
+</div>
+
+<!-- =======================================================
+     SQL + RESULT
+======================================================= -->
+<div class="sql-panel">
+    <div class="sql-header">
+        🧾 Generated SQL Query
+    </div>
+
+    <div class="sql-body">
+        <pre id="sqlBox">-- SQL will appear here --</pre>
+
+        <div class="sql-actions">
+            <button class="execute-btn" onclick="executeSQL()">▶ Execute</button>
+            <button class="copy-btn" onclick="copySQL()">📋 Copy</button>
+        </div>
+
+        <div class="result-panel">
+            <h3>📊 Query Result</h3>
+            <div class="table-wrapper" id="tableWrapper"></div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script>
+const API_BASE = "http://127.0.0.1:8000";
+let dbConnected = false;
+
+/* =========================================================
+   CHAT HELPERS
+========================================================= */
+function addMessage(content, type) {
+    const chat = document.getElementById("chat");
+    const div = document.createElement("div");
+    div.className = "message " + type;
+    div.innerHTML = content;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+}
+
+/* TYPEWRITER EFFECT */
+function typeText(element, text, speed = 18) {
+    let i = 0;
+    element.innerHTML = '<span></span><span class="cursor"></span>';
+    const span = element.querySelector("span");
+
+    const interval = setInterval(() => {
+        span.textContent += text.charAt(i);
+        i++;
+        if (i >= text.length) {
+            clearInterval(interval);
+            element.querySelector(".cursor").remove();
+        }
+    }, speed);
+}
+
+/* =========================================================
+   DATABASE CONNECT
+========================================================= */
+async function connectDB() {
+    db_status.innerText = "Connecting...";
+    db_status.style.color = "#eab308";
+
+    try {
+        const res = await fetch(`${API_BASE}/connect-db`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                db_host: db_host.value,
+                db_user: db_user.value,
+                db_password: db_password.value,
+                db_name: db_name.value
+            })
+        });
+
+        if (!res.ok) throw new Error("Connection failed");
+
+        db_status.innerText = "✅ Connected";
+        db_status.style.color = "#22c55e";
+        question.disabled = false;
+        sendBtn.disabled = false;
+        dbConnected = true;
+
+        addMessage("Database connected successfully.", "bot");
+    } catch {
+        db_status.innerText = "❌ Failed to connect";
+        db_status.style.color = "#ef4444";
+    }
+}
+
+/* =========================================================
+   ASK QUESTION
+========================================================= */
+async function askQuestion() {
+    const q = question.value.trim();
+    if (!q || !dbConnected) return;
+
+    addMessage(q, "user");
+    question.value = "";
+
+    const botDiv = addMessage("", "bot");
+
+    const res = await fetch(`${API_BASE}/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: q })
+    });
+
+    const data = await res.json();
+
+    document.getElementById("sqlBox").innerText = data.sql || "N/A";
+    typeText(botDiv, data.answer || "No answer generated");
+}
+
+/* =========================================================
+   EXECUTE SQL
+========================================================= */
+async function executeSQL() {
+    const sql = document.getElementById("sqlBox").innerText.trim();
+    if (!sql || sql.startsWith("--")) return;
+
+    const wrapper = document.getElementById("tableWrapper");
+    wrapper.innerHTML = "⏳ Executing query...";
+
+    const res = await fetch(`${API_BASE}/execute-sql`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sql })
+    });
+
+    const data = await res.json();
+    renderTable(data.columns, data.rows);
+}
+
+/* =========================================================
+   TABLE RENDER
+========================================================= */
+function renderTable(columns, rows) {
+    const wrapper = document.getElementById("tableWrapper");
+
+    if (!columns || columns.length === 0) {
+        wrapper.innerHTML = "No data returned.";
+        return;
+    }
+
+    let html = "<table><thead><tr>";
+    columns.forEach(col => html += `<th>${col}</th>`);
+    html += "</tr></thead><tbody>";
+
+    rows.forEach(row => {
+        html += "<tr>";
+        row.forEach(cell => html += `<td>${cell}</td>`);
+        html += "</tr>";
+    });
+
+    html += "</tbody></table>";
+    wrapper.innerHTML = html;
+}
+
+/* =========================================================
+   UTILITIES
+========================================================= */
+function handleEnter(e) {
+    if (e.key === "Enter") askQuestion();
+}
+
+function copySQL() {
+    navigator.clipboard.writeText(document.getElementById("sqlBox").innerText);
+}
+</script>
+
+</body>
+</html>
