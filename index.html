@@ -185,6 +185,13 @@ body {
     border-radius: 10px;
     border: 1px solid #1e293b;
     min-height: 120px;
+
+    /* 🔥 REQUIRED FIXES */
+    white-space: pre-wrap;      /* wrap lines */
+    word-break: break-word;     /* break long words */
+    overflow-wrap: anywhere;    /* extra safety */
+    overflow-x: auto;           /* scroll if needed */
+    max-width: 100%;
 }
 
 /* ---------- SQL ACTIONS ---------- */
@@ -417,7 +424,7 @@ async function askQuestion() {
 
     const data = await res.json();
 
-    document.getElementById("sqlBox").innerText = data.sql || "N/A";
+    document.getElementById("sqlBox").textContent = data.sql || "N/A";
     typeText(botDiv, data.answer || "No answer generated");
 }
 
@@ -425,7 +432,7 @@ async function askQuestion() {
    EXECUTE SQL
 ========================================================= */
 async function executeSQL() {
-    const sql = document.getElementById("sqlBox").innerText.trim();
+    const sql = document.getElementById("sqlBox").textContent.trim();
     if (!sql || sql.startsWith("--")) return;
 
     const wrapper = document.getElementById("tableWrapper");
@@ -474,7 +481,7 @@ function handleEnter(e) {
 }
 
 function copySQL() {
-    navigator.clipboard.writeText(document.getElementById("sqlBox").innerText);
+    navigator.clipboard.writeText(document.getElementById("sqlBox").textContent);
 }
 </script>
 
